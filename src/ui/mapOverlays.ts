@@ -1,5 +1,6 @@
 import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geojson';
 import { RoofFeature, RoofProject } from '../core/capture/model';
+import { cellPolygon } from '../core/geo/grid';
 import { colors } from './theme';
 
 /**
@@ -75,5 +76,38 @@ export function buildOverlays(
     polygons: { type: 'FeatureCollection', features: polygons },
     lines: { type: 'FeatureCollection', features: lines },
     vertices: { type: 'FeatureCollection', features: vertices },
+  };
+}
+
+export interface MoistureShapes {
+  /** Wet cells as squares, `value` property drives the color ramp. */
+  cells: FeatureCollection<Polygon>;
+  /** Individual readings, `value` property (0 = surveyed dry). */
+  readings: FeatureCollection<Point>;
+}
+
+export function buildMoistureOverlays(project: RoofProject | null): MoistureShapes {
+  const cells: Array<Feature<Polygon>> = [];
+  const readings: Array<Feature<Point>> = [];
+
+  for (const r of project?.readings ?? []) {
+    readings.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [r.lon, r.lat] },
+      properties: { value: r.value, dry: r.value === 0 },
+    });
+    if (r.mode === 'cell' && r.cell && project?.grid) {
+      const ring = cellPolygon(project.grid, r.cell).map(p => [p.lon, p.lat]);
+      cells.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [[...ring, ring[0]]] },
+        properties: { value: r.value, dry: r.value === 0 },
+      });
+    }
+  }
+
+  return {
+    cells: { type: 'FeatureCollection', features: cells },
+    readings: { type: 'FeatureCollection', features: readings },
   };
 }

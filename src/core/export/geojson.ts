@@ -1,5 +1,7 @@
 import { RoofFeature, RoofProject } from '../capture/model';
+import { moistureStats } from '../capture/moisture';
 import { featureStats, projectStats } from '../capture/session';
+import { cellKey, cellPolygon } from '../geo/grid';
 
 /**
  * GeoJSON export (RFC 7946: WGS84 lon/lat, right-hand-rule rings).
@@ -46,7 +48,8 @@ function featureGeometry(f: RoofFeature): object | null {
 
 export function projectToGeoJson(project: RoofProject): string {
   const stats = projectStats(project);
-  const features = project.features
+  const mstats = moistureStats(project);
+  const features: object[] = project.features
     .map(f => {
       const geometry = featureGeometry(f);
       if (!geometry) return null;
@@ -66,7 +69,36 @@ export function projectToGeoJson(project: RoofProject): string {
         },
       };
     })
-    .filter(Boolean);
+    .filter((f): f is NonNullable<typeof f> => f !== null);
+
+  // Moisture readings as points; cell-mode readings additionally as squares.
+  for (const r of project.readings ?? []) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [r.lon, r.lat] },
+      properties: {
+        kind: 'moisture-reading',
+        value: r.value,
+        mode: r.mode,
+        cell: r.cell ? cellKey(r.cell) : null,
+        source: r.source,
+        accuracy_m: round(r.totalAccuracy2d, 4),
+        captured_at: r.capturedAt,
+      },
+    });
+    if (r.mode === 'cell' && r.cell && project.grid) {
+      const ring = cellPolygon(project.grid, r.cell).map(p => [p.lon, p.lat]);
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [[...ring, ring[0]]] },
+        properties: {
+          kind: 'moisture-cell',
+          value: r.value,
+          cell: cellKey(r.cell),
+        },
+      });
+    }
+  }
 
   return JSON.stringify(
     {
@@ -79,7 +111,13 @@ export function projectToGeoJson(project: RoofProject): string {
         penetration_area_m2: round(stats.penetrationAreaM2, 3),
         net_area_m2: round(stats.netAreaM2, 3),
         perimeter_m: round(stats.perimeterM, 3),
-        source: 'Emlid Reach RX2 RTK (RTK FIX gated)',
+        moisture_readings: mstats.totalReadings,
+        wet_readings: mstats.wetReadings,
+        wet_cell_area_m2: round(mstats.wetCellAreaM2, 3),
+        scan_duration_s: Number.isFinite(mstats.scanDurationS)
+          ? Math.round(mstats.scanDurationS)
+          : null,
+        source: 'Emlid Reach RX2 RTK on Tramex RWS (RTK FIX gated)',
       },
     },
     null,

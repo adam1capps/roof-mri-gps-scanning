@@ -40,6 +40,28 @@ RX2 ──BT──▶ NMEA parser ──▶ epoch assembler ──▶ fix gate �
   first corner closes the polygon.
 - Net area = Σ perimeter polygons − Σ penetration polygons. Shown in ft², roofing squares, or m².
 
+## Moisture scanning (Tramex RWS + RX2)
+
+The RX2 screws onto the Tramex RWS so the antenna sits directly over the sensing area — set
+tilt mode to **Level** (or turn the tilt engine off on the receiver). Readings are Tramex
+values **1–10** (0 = surveyed dry; unscanned = assumed dry) logged at the RTK position:
+
+- **Keypad**: phone-pad layout with big sunlight-readable keys, each colored with its map
+  color (validated single-hue blue ramp, 1 light → 10 dark) so the keypad doubles as legend.
+- **Voice**: toggle the mic and say “**mark seven**” (command words configurable) — hands
+  stay on the scanner. Homophones (“for”, “to”, “ate”) are handled.
+- **Precise vs. square**: pin the exact spot, or attribute the whole **10×10 ft grid cell**
+  (size configurable). Grids come from **Instant grid** (auto-aligned to the traced section's
+  longest edge) or **calibration** (stand on a chalk-grid corner → mark origin, walk the row →
+  mark again). Re-reading a cell replaces its value.
+
+**Workflow**: trace the section in Layout mode (or skip it — readings layer over the aerial
+either way) → switch to **Scan moisture** → roll and log readings → **Finish scan** → preview
+(net area, wet ft², per-value distribution, scan duration + readings/hr for productivity
+averages) → add roof/core-sample photos → notes → **Submit report request**. The manifest
+JSON POSTs to the Report Creation Team webhook (Settings) and the full package (manifest,
+GeoJSON, readings CSV, photos) opens in the share sheet; everything stays on-device too.
+
 ## Feature types
 
 | Type        | Geometry        | Use for                                   |

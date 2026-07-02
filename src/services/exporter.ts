@@ -1,7 +1,7 @@
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import { RoofProject } from '../core/capture/model';
-import { projectToCsv } from '../core/export/csv';
+import { projectToCsv, readingsToCsv } from '../core/export/csv';
 import { projectToDxf, DxfOptions } from '../core/export/dxf';
 import { projectToGeoJson } from '../core/export/geojson';
 import { projectToShapefiles } from '../core/export/shp';
@@ -42,6 +42,9 @@ export async function exportProject(
 
   if (selection.csv) {
     await write(`${base}_points.csv`, projectToCsv(project), 'utf8');
+    if (project.readings?.length) {
+      await write(`${base}_readings.csv`, readingsToCsv(project), 'utf8');
+    }
   }
   if (selection.geojson) {
     await write(`${base}.geojson`, projectToGeoJson(project), 'utf8');

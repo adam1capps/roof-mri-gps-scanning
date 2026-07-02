@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <!-- Legacy BT discovery on Android 11-, and map display -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Voice reading entry ("mark seven") -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Roof / core sample photos -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
       android:name=".MainApplication"

@@ -105,6 +105,48 @@ export function SettingsScreen(_props: Props) {
         />
       </Section>
 
+      <Section title="Moisture scanning (Tramex RWS)">
+        <Text style={styles.hint}>
+          The RX2 rides on the RWS, so readings are logged at the antenna position. Cell mode
+          attributes the whole grid square (set the grid from the Scan screen).
+        </Text>
+        <NumberField
+          label="Grid cell size (ft)"
+          value={Math.round(s.cellSizeM / 0.3048)}
+          onChange={v => store.updateSettings({ cellSizeM: Math.max(1, v) * 0.3048 })}
+        />
+        <Field
+          label="Voice command words (comma-separated)"
+          value={s.voiceCommandWords.join(', ')}
+          onChangeText={v =>
+            store.updateSettings({
+              voiceCommandWords: v
+                .split(',')
+                .map(w => w.trim().toLowerCase())
+                .filter(Boolean),
+            })
+          }
+          placeholder="mark, reading, record"
+        />
+        <Text style={styles.hint}>Say e.g. “mark seven” to record a 7 at the current spot.</Text>
+      </Section>
+
+      <Section title="Report requests">
+        <Field
+          label="Report team webhook URL (optional)"
+          value={s.reportWebhookUrl}
+          onChangeText={v => store.updateSettings({ reportWebhookUrl: v.trim() })}
+          placeholder="https://…/roof-mri/report-intake"
+          keyboardType="url"
+        />
+        <Field
+          label="Report team email"
+          value={s.reportEmail}
+          onChangeText={v => store.updateSettings({ reportEmail: v.trim() })}
+          placeholder="reports@re-dry.com"
+        />
+      </Section>
+
       <Section title="Aerial basemap (Google Map Tiles API)">
         <Text style={styles.hint}>
           Create an API key in Google Cloud Console with “Map Tiles API” enabled. Tiles are
