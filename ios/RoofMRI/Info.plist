@@ -43,6 +43,12 @@
 	<string>Connects to the Emlid Reach RX2 GNSS receiver to capture roof measurement points.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Shows your position and captured roof points on the aerial map.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lets you speak moisture readings hands-free, e.g. "mark seven".</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Recognizes spoken moisture readings so you can log values without touching the screen.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Takes roof and core sample photos for the moisture report.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>external-accessory</string>

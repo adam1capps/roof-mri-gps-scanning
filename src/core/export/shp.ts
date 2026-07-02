@@ -29,7 +29,7 @@ export const WGS84_PRJ_WKT =
 
 type XY = [number, number]; // lon, lat
 
-interface DbfField {
+export interface DbfField {
   name: string; // ≤ 10 chars
   type: 'C' | 'N';
   length: number;
@@ -42,6 +42,14 @@ const FIELDS: DbfField[] = [
   { name: 'AREA_M2', type: 'N', length: 14, decimals: 3 },
   { name: 'PERIM_M', type: 'N', length: 12, decimals: 3 },
   { name: 'LENGTH_M', type: 'N', length: 12, decimals: 3 },
+  { name: 'ACC_M', type: 'N', length: 8, decimals: 4 },
+];
+
+const READING_FIELDS: DbfField[] = [
+  { name: 'MOIST', type: 'N', length: 3, decimals: 0 },
+  { name: 'MODE', type: 'C', length: 8, decimals: 0 },
+  { name: 'CELL', type: 'C', length: 12, decimals: 0 },
+  { name: 'SOURCE', type: 'C', length: 8, decimals: 0 },
   { name: 'ACC_M', type: 'N', length: 8, decimals: 4 },
 ];
 
@@ -230,9 +238,13 @@ export function buildShp(
   return { shp: shpW.result(), shx: shxW.result() };
 }
 
-export function buildDbf(rows: string[][], now = new Date()): Uint8Array {
-  const recordSize = 1 + FIELDS.reduce((s, f) => s + f.length, 0);
-  const headerSize = 32 + 32 * FIELDS.length + 1;
+export function buildDbf(
+  rows: string[][],
+  fields: DbfField[] = FIELDS,
+  now = new Date(),
+): Uint8Array {
+  const recordSize = 1 + fields.reduce((s, f) => s + f.length, 0);
+  const headerSize = 32 + 32 * fields.length + 1;
   const total = headerSize + recordSize * rows.length + 1;
   const w = new ByteWriter(total);
 
@@ -247,7 +259,7 @@ export function buildDbf(rows: string[][], now = new Date()): Uint8Array {
   w.u8((recordSize >> 8) & 0xff);
   for (let i = 12; i < 32; i++) w.u8(0);
 
-  for (const f of FIELDS) {
+  for (const f of fields) {
     w.asciiZeroPadded(f.name, 11);
     w.ascii(f.type, 1);
     w.i32le(0);
@@ -259,7 +271,7 @@ export function buildDbf(rows: string[][], now = new Date()): Uint8Array {
 
   for (const row of rows) {
     w.u8(0x20); // not deleted
-    FIELDS.forEach((f, i) => {
+    fields.forEach((f, i) => {
       const raw = row[i] ?? '';
       const val =
         f.type === 'N'
@@ -309,6 +321,28 @@ export function projectToShapefiles(project: RoofProject): ShpFileSet[] {
       shp,
       shx,
       dbf: buildDbf(lineFeatures.map(attributeRow)),
+      prj: WGS84_PRJ_WKT,
+    });
+  }
+
+  const readings = project.readings ?? [];
+  if (readings.length) {
+    const geoms = readings.map(r => ({ point: [r.lon, r.lat] as XY }));
+    const { shp, shx } = buildShp(1, geoms);
+    out.push({
+      baseName: `${safe}_readings`,
+      shp,
+      shx,
+      dbf: buildDbf(
+        readings.map(r => [
+          String(r.value),
+          r.mode,
+          r.cell ? `${r.cell.i},${r.cell.j}` : '',
+          r.source,
+          Number.isFinite(r.totalAccuracy2d) ? r.totalAccuracy2d.toFixed(4) : '',
+        ]),
+        READING_FIELDS,
+      ),
       prj: WGS84_PRJ_WKT,
     });
   }

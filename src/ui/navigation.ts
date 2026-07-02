@@ -4,4 +4,5 @@ export type RootStackParamList = {
   Connect: undefined;
   Settings: undefined;
   Export: undefined;
+  ScanSummary: undefined;
 };

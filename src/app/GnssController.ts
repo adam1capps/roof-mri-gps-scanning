@@ -1,3 +1,4 @@
+import { createReading, isValidReadingValue } from '../core/capture/moisture';
 import { PointAverager } from '../core/gnss/averager';
 import { evaluateEpoch, GateConfig } from '../core/gnss/gate';
 import { EpochAssembler } from '../core/nmea/epoch';
@@ -175,6 +176,38 @@ class GnssController {
         store.setAveraging(null);
       }
     }
+  }
+
+  /**
+   * Records a moisture reading (keypad or voice) at the current position.
+   * Uses the most recent gate-accepted epoch; readings are instant (no
+   * multi-epoch averaging) because the RWS keeps rolling.
+   *
+   * Returns null on success, else a human-readable reason.
+   */
+  captureReading(value: number, source: 'keypad' | 'voice'): string | null {
+    const store = useAppStore.getState();
+    if (!store.activeProjectId) return 'No active roof';
+    if (!isValidReadingValue(value)) return `Invalid reading ${value}`;
+
+    const point = store.lastPoint;
+    const gate = store.lastGate;
+    const fresh = point && Date.now() - point.receivedAt < 3000;
+    if (!fresh) {
+      const why = gate && !gate.accepted ? gate.rejections.join(' · ') : 'No recent RTK FIX';
+      return why || 'No recent RTK FIX';
+    }
+
+    const project = store.projects.find(p => p.id === store.activeProjectId);
+    const reading = createReading(
+      point,
+      value,
+      store.settings.readingMode,
+      source,
+      project?.grid ?? null,
+    );
+    store.applyReading(reading);
+    return null;
   }
 
   /** Test hook: inject raw NMEA text as if it came from the receiver. */

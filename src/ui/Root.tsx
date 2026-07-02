@@ -9,6 +9,7 @@ import { CaptureScreen } from './screens/CaptureScreen';
 import { ConnectScreen } from './screens/ConnectScreen';
 import { ExportScreen } from './screens/ExportScreen';
 import { ProjectsScreen } from './screens/ProjectsScreen';
+import { ScanSummaryScreen } from './screens/ScanSummaryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,6 +47,11 @@ export function Root() {
         <Stack.Screen name="Connect" component={ConnectScreen} options={{ title: 'Receiver & corrections' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
         <Stack.Screen name="Export" component={ExportScreen} options={{ title: 'Export' }} />
+        <Stack.Screen
+          name="ScanSummary"
+          component={ScanSummaryScreen}
+          options={{ title: 'Scan summary' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

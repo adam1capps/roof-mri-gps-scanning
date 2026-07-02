@@ -49,6 +49,16 @@ export interface RoofProject {
   createdAt: string;
   updatedAt: string;
   features: RoofFeature[];
+  /** Moisture readings captured with the Tramex RWS + RX2 rig. */
+  readings?: import('./moisture').MoistureReading[];
+  /** Scan grid for cell-mode readings (instant or calibrated). */
+  grid?: import('../geo/grid').GridDefinition;
+  /** Scan session timing (productivity stats). */
+  scan?: import('./moisture').ScanSession;
+  /** Roof photos, including core samples. */
+  photos?: import('./moisture').PhotoAttachment[];
+  /** Set once the report request has been submitted. */
+  reportSubmittedAt?: string;
   notes?: string;
 }
 

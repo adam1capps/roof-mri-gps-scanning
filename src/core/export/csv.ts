@@ -1,4 +1,5 @@
 import { RoofProject } from '../capture/model';
+import { cellKey } from '../geo/grid';
 import { fixQualityLabel } from '../gnss/gate';
 
 function csvField(value: string): string {
@@ -6,7 +7,7 @@ function csvField(value: string): string {
 }
 
 /**
- * One row per captured vertex:
+ * Geometry vertices: one row per captured vertex:
  * feature, kind, index, lat, lon, accuracy, fix, tilt, timestamps.
  */
 export function projectToCsv(project: RoofProject): string {
@@ -51,5 +52,43 @@ export function projectToCsv(project: RoofProject): string {
       );
     });
   }
+  return rows.join('\r\n') + '\r\n';
+}
+
+/** Moisture readings: one row per reading (Tramex value 0–10 at RX2 position). */
+export function readingsToCsv(project: RoofProject): string {
+  const rows: string[] = [
+    [
+      'reading_index',
+      'latitude',
+      'longitude',
+      'moisture_value',
+      'mode',
+      'grid_cell',
+      'source',
+      'sigma_h_m',
+      'total_accuracy_2d_m',
+      'gps_time_utc',
+      'captured_at',
+    ].join(','),
+  ];
+
+  (project.readings ?? []).forEach((r, i) => {
+    rows.push(
+      [
+        String(i + 1),
+        r.lat.toFixed(9),
+        r.lon.toFixed(9),
+        String(r.value),
+        r.mode,
+        r.cell ? csvField(cellKey(r.cell)) : '',
+        r.source,
+        Number.isFinite(r.sigmaH) ? r.sigmaH.toFixed(4) : '',
+        Number.isFinite(r.totalAccuracy2d) ? r.totalAccuracy2d.toFixed(4) : '',
+        r.gpsTime,
+        r.capturedAt,
+      ].join(','),
+    );
+  });
   return rows.join('\r\n') + '\r\n';
 }
