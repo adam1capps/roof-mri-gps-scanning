@@ -15,14 +15,23 @@ RX2 ──BT──▶ NMEA parser ──▶ epoch assembler ──▶ fix gate �
 ## How measurement works (the part that matters)
 
 - **Only RTK FIX epochs are recordable** (GGA quality 4). FLOAT/SINGLE are shown but never saved.
-- **Per-point accuracy** comes from GST: σH = √(σlat² + σlon²). When tilt compensation is active,
-  the ETC per-axis coefficients × antenna height are added (Emlid ETC doc rev.3 formulas). The
-  combined 2D accuracy is gated against a configurable limit (default 3 cm) and stored per vertex.
-- **Tilt compensation is applied in-app**: the RX2's GGA reports the *antenna* position; the ETC
-  message (state 30 = compensating) supplies heading/tilt direction/tilt value, and the app
-  computes the pole-tip position via the local-tangent-plane deltas from the Emlid spec.
-  Antenna height = pole height + **0.145 m** (RX2 bottom→ARP). You can require compensation,
-  run level-pole, or auto-detect (default).
+- **Message rates** (per the official RX2 NMEA spec): GGA and ETC stream at **5 Hz**, GST (and
+  GSA/GSV/RMC/VTG/ZDA) at **1 Hz**. The epoch assembler matches sentences by UTC timestamp and
+  carries the latest GST forward (max 2 s) so every 5 Hz fix gets an accuracy estimate.
+- **Per-point accuracy** comes from GST: σH = √(σlat² + σlon²). When this app applies tilt
+  compensation, the ETC per-axis coefficients × antenna height are added (Emlid ETC doc rev.3
+  formulas). The combined 2D accuracy is gated against a configurable limit (default 3 cm) and
+  stored per vertex.
+- **Tilt compensation is applied in-app** (default): the RX2's GGA reports the *antenna*
+  position; the ETC message (state 30 = compensating) supplies heading/tilt direction/tilt
+  value, and the app computes the pole-tip position via the local-tangent-plane deltas from the
+  Emlid spec. Antenna height = pole height + **0.145 m** (RX2 bottom→ARP).
+- **⚠ Double-compensation trap**: Emlid Flow has an *"NMEA message compensation"* option
+  (Integration with external software). When it is ON, the receiver itself outputs the
+  compensated pole-tip position — set the app's tilt mode to **Receiver compensated** so the
+  offset isn't applied twice. When it is OFF (default), use **Auto** or **Require**. The other
+  modes are level-pole (raw antenna position) and auto (compensate when state 30, pass through
+  when tilt is off).
 - **Epoch averaging**: each tap averages N consecutive accepted epochs (default 5 = 1 s @ 5 Hz).
 - **All area/perimeter math happens on a local East-North tangent plane in meters**, evaluated at
   the roof's ellipsoidal height — not on Web Mercator, not on raw lat/lon, and not in UTM (which

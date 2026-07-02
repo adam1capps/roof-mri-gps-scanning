@@ -20,6 +20,13 @@ import {
 export type TiltMode =
   /** Only accept epochs with the tilt engine compensating (state 30); apply the offset. */
   | 'require-compensated'
+  /**
+   * Emlid Flow's "NMEA message compensation" is enabled on the receiver: GGA
+   * already carries the compensated (pole tip) position, so require state 30
+   * but do NOT apply the offset again (that would double-compensate) and do
+   * not add the tilt error term (the compensated GST reflects full accuracy).
+   */
+  | 'receiver-compensated'
   /** Pole is held level (or tilt disabled): use GGA position as-is; reject if tilt engine is active. */
   | 'level-pole'
   /** Compensate when state 30, pass through when tilt is off, reject transitional states. */
@@ -130,6 +137,7 @@ export function evaluateEpoch(epoch: GnssEpoch, config: GateConfig): GateResult 
 
   switch (config.tiltMode) {
     case 'require-compensated':
+    case 'receiver-compensated':
       if (!isCompensating(etc)) {
         rejections.push(tiltOff ? 'Tilt is off (required on)' : tiltStateLabel(tiltState));
       }
@@ -154,6 +162,9 @@ export function evaluateEpoch(epoch: GnssEpoch, config: GateConfig): GateResult 
     position = compensate2d(position, etc, config.poleHeightM);
     tiltCompensated = true;
     tiltErrorMm = tiltAccuracy2dMm(etc, antH);
+  } else if (config.tiltMode === 'receiver-compensated' && isCompensating(etc)) {
+    // Position already compensated on the receiver — record tilt metadata only.
+    tiltCompensated = true;
   }
 
   const totalAccuracy2d = Number.isFinite(sigmaH)

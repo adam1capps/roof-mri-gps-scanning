@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { gnssController } from '../../app/GnssController';
+import { distanceM } from '../../core/geo/measure';
 import { fixQualityLabel } from '../../core/gnss/gate';
 import type { BtDeviceInfo } from '../../device/EmlidBluetooth';
 import { useAppStore } from '../../state/useAppStore';
@@ -62,6 +63,24 @@ export function ConnectScreen(_props: Props) {
 
   const epoch = store.lastEpoch;
   const ntrip = store.ntripStatus;
+
+  // Offer the closest mount points first once we know where we are.
+  const sourceTable = useMemo(() => {
+    const st = store.sourceTable;
+    const gga = store.lastEpoch?.gga;
+    if (!st) return null;
+    if (!gga || !Number.isFinite(gga.latitude)) {
+      return st.map(e => ({ ...e, distanceKm: NaN }));
+    }
+    const here = { lat: gga.latitude, lon: gga.longitude };
+    const dist = (e: { lat: number; lon: number }) =>
+      Number.isFinite(e.lat) && Number.isFinite(e.lon)
+        ? distanceM(here, e)
+        : Infinity;
+    return st
+      .map(e => ({ ...e, distanceKm: dist(e) / 1000 }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [store.sourceTable, store.lastEpoch]);
   const rtcmSummary = Object.entries(store.rtcmMessageCounts)
     .sort((a, b) => Number(a[0]) - Number(b[0]))
     .map(([type, count]) => `${type}×${count}`)
@@ -195,9 +214,9 @@ export function ConnectScreen(_props: Props) {
             }
           }}
         />
-        {store.sourceTable && (
+        {sourceTable && (
           <View style={{ marginTop: spacing(1) }}>
-            {store.sourceTable.slice(0, 30).map(entry => (
+            {sourceTable.slice(0, 30).map(entry => (
               <TouchableOpacity
                 key={entry.mountpoint}
                 style={styles.deviceRow}
@@ -207,6 +226,7 @@ export function ConnectScreen(_props: Props) {
                 }}>
                 <Text style={styles.deviceName}>{entry.mountpoint}</Text>
                 <Text style={styles.dim}>
+                  {Number.isFinite(entry.distanceKm) ? `${entry.distanceKm.toFixed(0)} km · ` : ''}
                   {entry.format} · {entry.navSystem} {entry.nmeaRequired ? '· needs GGA (VRS)' : ''}
                 </Text>
               </TouchableOpacity>
