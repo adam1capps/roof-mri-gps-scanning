@@ -62,15 +62,18 @@ export function SettingsScreen(_props: Props) {
 
       <Section title="Tilt compensation">
         <Text style={styles.hint}>
-          Auto: apply compensation when the RX2 tilt engine reports Compensating (state 30);
-          pass through when tilt is off. Require: reject points unless compensating.
+          Auto: this app applies compensation when the RX2 reports Compensating (state 30);
+          passes through when tilt is off. Require: reject points unless compensating.
+          Receiver: use when “NMEA message compensation” is enabled in Emlid Flow — the RX2
+          already outputs the pole-tip position, so the app must NOT compensate again.
           Level pole: always use the raw antenna position.
         </Text>
         <SegmentedControl<TiltMode>
           options={[
             { value: 'auto', label: 'Auto' },
             { value: 'require-compensated', label: 'Require' },
-            { value: 'level-pole', label: 'Level pole' },
+            { value: 'receiver-compensated', label: 'Receiver' },
+            { value: 'level-pole', label: 'Level' },
           ]}
           value={s.tiltMode}
           onChange={v => store.updateSettings({ tiltMode: v })}

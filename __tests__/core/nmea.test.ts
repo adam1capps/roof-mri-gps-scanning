@@ -182,6 +182,42 @@ describe('EpochAssembler', () => {
     expect(epochs[0].etc).toBeUndefined();
   });
 
+  it('carries the 1 Hz GST forward to 5 Hz epochs (RX2 rate mismatch)', () => {
+    const epochs: GnssEpoch[] = [];
+    const assembler = new EpochAssembler(e => epochs.push(e));
+    // Full epoch at .80 (GST's own timestamp)...
+    feed(assembler, [GGA_RTK, GST, ETC_COMPENSATING]);
+    // ...then a 5 Hz epoch at 193829.00 without GST...
+    feed(assembler, [
+      buildSentence('GNGGA,193829.00,4717.113993,N,00833.915803,E,4,25,0.7,411.023,M,47.966,M,1.0,0000'),
+      buildSentence('GNETC,193829.00,30,00,172.543,5.621,2.344,1.013,0.993,1.021'),
+    ]);
+    // ...flushed by the next timestamp arriving.
+    feed(assembler, [
+      buildSentence('GNGGA,193829.20,4717.113993,N,00833.915803,E,4,25,0.7,411.023,M,47.966,M,1.0,0000'),
+    ]);
+    expect(epochs).toHaveLength(2);
+    expect(epochs[0].gstCarried).toBeUndefined();
+    expect(epochs[1].time).toBe('193829.00');
+    expect(epochs[1].gst?.sigmaLat).toBeCloseTo(0.006); // carried forward
+    expect(epochs[1].gstCarried).toBe(true);
+  });
+
+  it('does not carry a stale GST beyond the max age', () => {
+    const epochs: GnssEpoch[] = [];
+    const assembler = new EpochAssembler(e => epochs.push(e), { gstMaxAgeS: 2 });
+    feed(assembler, [GST]); // GST at 193828.80
+    feed(assembler, [
+      buildSentence('GNGGA,193840.00,4717.113993,N,00833.915803,E,4,25,0.7,411.023,M,47.966,M,1.0,0000'),
+    ]);
+    feed(assembler, [
+      buildSentence('GNGGA,193840.20,4717.113993,N,00833.915803,E,4,25,0.7,411.023,M,47.966,M,1.0,0000'),
+    ]);
+    expect(epochs).toHaveLength(1);
+    expect(epochs[0].gst).toBeUndefined(); // 11+ s old — too stale
+    expect(epochs[0].gstCarried).toBeUndefined();
+  });
+
   it('drops orphan GST/ETC without GGA', () => {
     const epochs: GnssEpoch[] = [];
     const assembler = new EpochAssembler(e => epochs.push(e));

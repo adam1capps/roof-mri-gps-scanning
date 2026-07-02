@@ -153,6 +153,8 @@ export interface GnssEpoch {
   gga: GgaData;
   gst?: GstData;
   etc?: EtcData;
+  /** True when `gst` was carried forward from a previous epoch (GST is 1 Hz). */
+  gstCarried?: boolean;
   /** Phone wall-clock time when the epoch was assembled (ms since Unix epoch). */
   receivedAt: number;
 }

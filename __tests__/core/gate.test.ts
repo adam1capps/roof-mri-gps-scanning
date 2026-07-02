@@ -158,6 +158,35 @@ describe('fix gate', () => {
     expect(r.rejections.join()).toContain('Tilt is off');
   });
 
+  it('receiver-compensated mode keeps the GGA position (no double compensation)', () => {
+    const r = evaluateEpoch(
+      epoch({
+        gga: gga(FixQuality.RtkFix),
+        gst: gst(),
+        etc: etc(TiltState.Compensating),
+      }),
+      { ...config, tiltMode: 'receiver-compensated' },
+    );
+    expect(r.accepted).toBe(true);
+    // Position passes through untouched — the receiver already applied the offset.
+    expect(r.point!.lat).toBeCloseTo(LAT, 12);
+    expect(r.point!.lon).toBeCloseTo(LON, 12);
+    expect(r.point!.tiltCompensated).toBe(true);
+    // No tilt error term added: compensated GST reflects full accuracy.
+    expect(r.point!.totalAccuracy2d).toBeCloseTo(r.point!.sigmaH, 12);
+  });
+
+  it('receiver-compensated mode rejects non-compensating states', () => {
+    for (const e of [
+      epoch({ gga: gga(FixQuality.RtkFix), gst: gst() }), // tilt off
+      epoch({ gga: gga(FixQuality.RtkFix), gst: gst(), etc: etc(TiltState.Alignment) }),
+    ]) {
+      expect(
+        evaluateEpoch(e, { ...config, tiltMode: 'receiver-compensated' }).accepted,
+      ).toBe(false);
+    }
+  });
+
   it('level-pole mode uses the raw antenna position even when compensating', () => {
     const r = evaluateEpoch(
       epoch({
