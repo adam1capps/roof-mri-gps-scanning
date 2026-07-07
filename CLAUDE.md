@@ -7,7 +7,16 @@
 - The **domain/email keeps its hyphen**: `re-dry.com`, `adam@re-dry.com`,
   `reports@re-dry.com` — those are the real addresses; do not "fix" them.
 - iOS/Android bundle id: `com.redry.roofmri` (no hyphen, lowercase).
-- Apple Developer Program: enrolling as **Organization** (ReDry).
+
+## Apple Developer account (enrolled July 2026)
+
+- Organization: legal entity **ReDry LLC** · Team ID **BWBGQ29B36** ·
+  Account Holder Adam Capps (adam@re-dry.com) · renews 2027-07-07.
+- App Store Connect: app record **"Roof MRI"** exists (bundle
+  `com.redry.roofmri`, SKU `roofmri-001`); EU DSA trader declaration done;
+  Free Apps Agreement active (Paid Apps unsigned — not needed for TestFlight).
+- TestFlight plan: internal group **"ReDry Field Crew"** (created after the
+  first Xcode build upload).
 
 ## What this app is
 
