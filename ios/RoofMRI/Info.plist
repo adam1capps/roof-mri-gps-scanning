@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>RoofMRI</string>
+	<string>Roof MRI</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -32,8 +32,6 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>UISupportedExternalAccessoryProtocols</key>
 	<array>
 		<string>com.emlid.nmea</string>
@@ -53,8 +51,6 @@
 	<array>
 		<string>external-accessory</string>
 	</array>
-	<key>CFBundleDisplayName</key>
-	<string>Roof MRI</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -68,6 +64,10 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<!-- App uses only OS-provided HTTPS/TLS (exempt encryption); no custom crypto.
+	     Declares export-compliance up front so TestFlight builds aren't held. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
 </plist>

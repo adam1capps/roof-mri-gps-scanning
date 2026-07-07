@@ -36,5 +36,10 @@ target 'RoofMRI' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    # @maplibre/maplibre-react-native links the native MapLibre SDK by injecting
+    # a Swift Package reference (maplibre-gl-native-distribution) onto the app
+    # target. $MLRN is defined by the package's podspec during autolinking; this
+    # call performs the injection. Without it the app builds with no map engine.
+    $MLRN.post_install(installer)
   end
 end
